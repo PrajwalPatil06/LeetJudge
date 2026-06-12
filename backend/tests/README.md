@@ -23,8 +23,8 @@ npm test
 2. **Import Required Modules:**
    You will need `supertest` to make HTTP calls and the Express `app` to handle them.
    ```javascript
-   const request = require('supertest');
-   const app = require('../app');
+   import request from 'supertest';
+   import app from '../app.js';
    ```
 
 3. **Write the Test Block:**
