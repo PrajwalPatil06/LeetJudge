@@ -1,12 +1,12 @@
 import Redis from 'ioredis';
-const redisClient = new Redis({
+const redisConnection = new Redis({
   host: process.env.REDIS_HOST || '127.0.0.1',
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD,
   maxRetriesPerRequest: null, // Often required for robust queue workers
 });
 
-redisClient.on('connect', () => console.log('Redis connected successfully.'));
-redisClient.on('error', (err) => console.error('Redis connection error:', err));
+redisConnection.on('connect', () => console.log('Redis connected successfully.'));
+redisConnection.on('error', (err) => console.error('Redis connection error:', err));
 
-export default redisClient;
+export default redisConnection;

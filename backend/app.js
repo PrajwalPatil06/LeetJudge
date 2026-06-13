@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-import db from './config/database';
-import { redisConnection } from './config/redis.js';
+import { pool, query } from './config/database.js';
+import  redisConnection  from './config/redis.js';
 // Middleware
 app.use(express.json());
 
