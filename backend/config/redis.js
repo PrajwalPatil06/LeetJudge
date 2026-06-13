@@ -4,6 +4,12 @@ const redisConnection = new Redis({
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD,
   maxRetriesPerRequest: null, // Often required for robust queue workers
+  retryStrategy(times) {
+    if (process.env.NODE_ENV === 'test') {
+      return null; 
+    }
+    return Math.min(times * 50, 2000);
+  }
 });
 
 redisConnection.on('connect', () => console.log('Redis connected successfully.'));

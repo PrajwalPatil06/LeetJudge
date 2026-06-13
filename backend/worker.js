@@ -2,10 +2,9 @@ import { Worker } from 'bullmq';
 import { redisConnection } from './config/redis.js';
 import { processSubmission } from './queue/submission.worker.js';
 
-// 1. Initialize the Worker using the separated logic
 const submissionWorker = new Worker(
   'judge_queue', 
-  processSubmission, // Points to the function in submission.worker.js
+  processSubmission,
   {
     connection: redisConnection,
     concurrency: 5,
@@ -14,7 +13,6 @@ const submissionWorker = new Worker(
   }
 );
 
-// 2. Lifecycle Event Listeners
 submissionWorker.on('completed', (jobId, result) => {
   console.log(`Job ${jobId} completed. Verdict: ${result.verdict}`);
 });

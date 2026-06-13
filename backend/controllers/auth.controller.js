@@ -1,5 +1,5 @@
 
-export const singup = async (req,res) => {
+export const signup = async (req,res) => {
     //signup logic
 }
 

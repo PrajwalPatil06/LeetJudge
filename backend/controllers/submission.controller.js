@@ -10,6 +10,6 @@ export const getMySubmissions=async(req,res)=>{
     //get my submissions
 }
 
-export const getMySubmissionsForProblem=async(req,res)=>{
-    //get my submissions for a particular problem
+export const getUserSubmissionsForProblem=async(req,res)=>{
+    //get user's submissions for a particular problem
 }
