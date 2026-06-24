@@ -27,13 +27,15 @@ export const sendWelcomeEmail = async (email, name) => {
     return emailProvider.sendEmail({ to: email, subject: 'Welcome to LeetJudge!', html });
 };
 
-export const sendLoginAlertEmail = async (email, ip, time) => {
+export const sendLoginAlertEmail = async (email, ip, location, device, time) => {
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>New Login Detected</h2>
             <p>A new login to your LeetJudge account was just detected.</p>
             <ul>
-                <li><strong>IP Address:</strong> ${ip || 'Unknown'}</li>
+                <li><strong>Device:</strong> ${device}</li>
+                ${location ? `<li><strong>Location:</strong> ${location}</li>` : ''}
+                <li><strong>IP Address:</strong> ${ip}</li>
                 <li><strong>Time:</strong> ${time}</li>
             </ul>
             <p>If this was you, you can safely ignore this email. If not, please change your password immediately.</p>

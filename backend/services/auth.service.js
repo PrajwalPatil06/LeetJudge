@@ -41,7 +41,7 @@ export const signupService = async ({ name, username, email, password }) => {
     return newUser;
 };
 
-export const loginService = async (email, password, ip) => {
+export const loginService = async (email, password, ip, userAgent) => {
     const user = await accountRepo.findByEmail(email);
 
     if (!user) {
@@ -62,9 +62,18 @@ export const loginService = async (email, password, ip) => {
     const time = new Date().toLocaleString();
     
     // Attempt geolocation
-    getLocationFromIP(ip).then(location => {
-        const ipDisplay = ip ? `${ip} (${location})` : `Unknown IP (${location})`;
-        sendLoginAlertEmail(user.email, ipDisplay, time).catch(err => {
+    getLocationFromIP(ip).then(loc => {
+        // Strip IPv4 mapping prefix
+        let cleanIp = ip || 'Unknown';
+        if (cleanIp.startsWith('::ffff:')) {
+            cleanIp = cleanIp.substring(7);
+        }
+
+        // Only display location if it's meaningful
+        const isUnknown = loc === 'Unknown Region' || loc === 'Local Network (Development)';
+        const locationDisplay = isUnknown ? null : loc;
+
+        sendLoginAlertEmail(user.email, cleanIp, locationDisplay, userAgent, time).catch(err => {
             console.error('Failed to send login alert email:', err.message);
         });
     });
