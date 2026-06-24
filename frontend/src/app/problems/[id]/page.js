@@ -8,6 +8,7 @@ import CodeEditor from '../../components/CodeEditor';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 // Language IDs must match backend models/language.js
 const LANGUAGES = [
@@ -65,7 +66,7 @@ export default function ProblemWorkspace() {
 
   const handleSubmit = async () => {
     if (!user) {
-      alert("Please login to submit");
+      toast.error("Please login to submit");
       return;
     }
     setSubmitting(true);
