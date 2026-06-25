@@ -25,6 +25,8 @@ export default function EditProblem({ params }) {
   const [timelimit, setTimelimit] = useState(1000);
   const [memorylimit, setMemorylimit] = useState(262144);
   const [tags, setTags] = useState([]);
+  const [editorial, setEditorial] = useState('');
+  const [isEditorialVisible, setIsEditorialVisible] = useState(true);
   
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +45,8 @@ export default function EditProblem({ params }) {
         setTimelimit(p.timelimit);
         setMemorylimit(p.memorylimit);
         setTags(p.tags ? p.tags.filter((t) => allowedTags.includes(t)) : []);
+        setEditorial(p.editorial || '');
+        setIsEditorialVisible(p.is_editorial_visible !== false);
       } catch (err) {
         setError('Failed to fetch problem data');
       } finally {
@@ -78,6 +82,8 @@ export default function EditProblem({ params }) {
         timelimit: Number(timelimit),
         memorylimit: Number(memorylimit),
         tags,
+        editorial,
+        is_editorial_visible: isEditorialVisible,
       });
 
       router.push(`/problems/${id}`);
@@ -127,6 +133,28 @@ export default function EditProblem({ params }) {
             value={description}
             onChange={setDescription}
             placeholder="Write your problem statement here using Markdown. Use $...$ for inline LaTeX and $$...$$ for block LaTeX. Use the Upload Image button to include images."
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label htmlFor="editorial" style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-main)' }}>
+              Editorial (Optional Markdown)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={isEditorialVisible} 
+                onChange={(e) => setIsEditorialVisible(e.target.checked)} 
+                style={{ cursor: 'pointer' }}
+              />
+              Visible (Uncheck during contests)
+            </label>
+          </div>
+          <MarkdownEditor 
+            value={editorial}
+            onChange={setEditorial}
+            placeholder="Write the editorial or solution explanation here."
           />
         </div>
 

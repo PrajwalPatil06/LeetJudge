@@ -22,6 +22,8 @@ export default function CreateProblem() {
   const [timelimit, setTimelimit] = useState(1000);
   const [memorylimit, setMemorylimit] = useState(262144);
   const [tags, setTags] = useState([]);
+  const [editorial, setEditorial] = useState('');
+  const [isEditorialVisible, setIsEditorialVisible] = useState(true);
   const [testCases, setTestCases] = useState([{ input: '', output: '' }]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +41,8 @@ export default function CreateProblem() {
         if (parsed.difficulty) setDifficulty(parsed.difficulty);
         if (parsed.timelimit) setTimelimit(parsed.timelimit);
         if (parsed.memorylimit) setMemorylimit(parsed.memorylimit);
+        if (parsed.editorial !== undefined) setEditorial(parsed.editorial);
+        if (parsed.isEditorialVisible !== undefined) setIsEditorialVisible(parsed.isEditorialVisible);
         if (parsed.tags) {
           if (Array.isArray(parsed.tags)) {
             setTags(parsed.tags.filter((t) => allowedTags.includes(t)));
@@ -54,9 +58,9 @@ export default function CreateProblem() {
   }, [tagsLoading, allowedTags]);
 
   useEffect(() => {
-    const draft = { title, description, difficulty, timelimit, memorylimit, tags, testCases };
+    const draft = { title, description, difficulty, timelimit, memorylimit, tags, testCases, editorial, isEditorialVisible };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  }, [title, description, difficulty, timelimit, memorylimit, tags, testCases]);
+  }, [title, description, difficulty, timelimit, memorylimit, tags, testCases, editorial, isEditorialVisible]);
 
   if (authLoading) {
     return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>;
@@ -98,6 +102,8 @@ export default function CreateProblem() {
         timelimit: Number(timelimit),
         memorylimit: Number(memorylimit),
         tags,
+        editorial,
+        is_editorial_visible: isEditorialVisible,
       });
 
       const problem = problemRes.data.problem;
@@ -144,6 +150,29 @@ export default function CreateProblem() {
             onChange={setDescription}
             placeholder="Write your problem statement here using Markdown. Use $...$ for inline LaTeX and $$...$$ for block LaTeX. Use the Upload Image button to include images."
             storageKey={DRAFT_KEY}
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label htmlFor="editorial" style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-main)' }}>
+              Editorial (Optional Markdown)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={isEditorialVisible} 
+                onChange={(e) => setIsEditorialVisible(e.target.checked)} 
+                style={{ cursor: 'pointer' }}
+              />
+              Visible (Uncheck during contests)
+            </label>
+          </div>
+          <MarkdownEditor 
+            value={editorial}
+            onChange={setEditorial}
+            placeholder="Write the editorial or solution explanation here."
+            storageKey={DRAFT_KEY + '_editorial'}
           />
         </div>
 
