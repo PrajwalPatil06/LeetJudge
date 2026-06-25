@@ -31,7 +31,7 @@ describe('OTP Endpoints', () => {
             .send({ email: testEmail, otp: '000000' }); // Assuming 000000 is incorrect (1/1000000 chance it is correct)
 
         expect(res.statusCode).toEqual(400);
-        expect(res.body.error).toEqual('Invalid OTP.');
+        expect(res.body.error).toEqual('Invalid or expired OTP');
     });
 
     it('should successfully verify with the correct OTP', async () => {

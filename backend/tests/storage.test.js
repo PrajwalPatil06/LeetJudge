@@ -52,7 +52,7 @@ describe('Storage Service', () => {
                 buffer: Buffer.from('fake image data')
             };
 
-            const url = await provider.uploadFile(fakeImage);
+            const { url } = await provider.uploadFile(fakeImage);
             expect(url).toContain('/uploads/');
             expect(url).toContain('.png');
 
