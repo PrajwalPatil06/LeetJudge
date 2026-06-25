@@ -8,6 +8,7 @@ import Input from '../../../components/Input';
 import Button from '../../../components/Button';
 import MarkdownEditor from '../../../components/MarkdownEditor';
 import ProblemGuidelines from '../../../components/ProblemGuidelines';
+import { toast } from 'react-hot-toast';
 
 export default function EditProblem({ params }) {
   const { id } = use(params);
