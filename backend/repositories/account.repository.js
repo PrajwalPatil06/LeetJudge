@@ -87,3 +87,17 @@ export const findByUsername = async (username) => {
 
     return result.rows[0];
 };
+
+export const updateRole = async (email, newRole) => {
+    const result = await query(
+        `
+        UPDATE accounts
+        SET role = $1
+        WHERE email = $2
+        RETURNING *
+        `,
+        [newRole, email]
+    );
+
+    return result.rows[0];
+};
