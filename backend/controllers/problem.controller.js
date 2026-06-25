@@ -1,4 +1,6 @@
 import * as problemService from '../services/problem.service.js';
+import { uploadImageService, deleteImageService } from '../services/storage.service.js';
+import { clearCache } from '../middleware/cache.middleware.js';
 
 export const getProblems = async (req, res) => {
     try {
@@ -38,6 +40,9 @@ export const createProblem = async (req, res) => {
             title, description, tags, difficulty, createdBy, timelimit, memorylimit
         });
 
+        // Invalidate cache
+        await clearCache('cache:/api/problems');
+
         res.status(201).json({ message: "Problem created successfully", problem: newProblem });
     } catch (error) {
         console.error(error);
@@ -75,5 +80,130 @@ export const getProblemById = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "An internal server error occurred" });
+    }
+};
+
+// Check if user has edit permissions for a problem
+const canEditProblem = async (problemId, userId, userRole) => {
+    if (userRole === 'ADMIN') return true;
+    
+    const problem = await problemService.getProblemByIdService(problemId);
+    if (!problem) return false;
+    if (problem.created_by === userId) return true;
+
+    const editors = await problemService.getProblemEditorsService(problemId);
+    return editors.includes(userId);
+};
+
+export const updateProblem = async (req, res) => {
+    try {
+        const { problemId } = req.params;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        const hasPermission = await canEditProblem(problemId, userId, userRole);
+        if (!hasPermission) {
+            return res.status(403).json({ error: "Forbidden: You don't have permission to edit this problem" });
+        }
+
+        const { title, description, tags, difficulty, timelimit, memorylimit } = req.body;
+        
+        // Basic validation
+        if (!title || !description || !difficulty || !timelimit || !memorylimit) {
+            return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        const updatedProblem = await problemService.updateProblemService(problemId, {
+            title, description, tags, difficulty, timelimit, memorylimit
+        });
+
+        // Invalidate cache
+        await clearCache('cache:/api/problems');
+        await clearCache(`cache:/api/problems/${problemId}`);
+
+        res.status(200).json({ message: "Problem updated successfully", problem: updatedProblem });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "An internal server error occurred" });
+    }
+};
+
+export const deleteProblem = async (req, res) => {
+    try {
+        const { problemId } = req.params;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        const hasPermission = await canEditProblem(problemId, userId, userRole);
+        if (!hasPermission) {
+            return res.status(403).json({ error: "Forbidden: You don't have permission to delete this problem" });
+        }
+
+        await problemService.deleteProblemService(problemId);
+
+        // Invalidate cache
+        await clearCache('cache:/api/problems');
+        await clearCache(`cache:/api/problems/${problemId}`);
+
+        res.status(200).json({ message: "Problem deleted successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "An internal server error occurred" });
+    }
+};
+
+export const addEditor = async (req, res) => {
+    try {
+        const { problemId } = req.params;
+        const { editorId } = req.body;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        if (!editorId) {
+             return res.status(400).json({ error: "Editor ID is required" });
+        }
+
+        // Only creator or admin can add editors
+        if (userRole !== 'ADMIN') {
+            const problem = await problemService.getProblemByIdService(problemId);
+            if (!problem || problem.created_by !== userId) {
+                return res.status(403).json({ error: "Forbidden: Only the creator or an admin can add editors" });
+            }
+        }
+
+        await problemService.addProblemEditorService(problemId, editorId);
+        res.status(200).json({ message: "Editor added successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "An internal server error occurred" });
+    }
+};
+
+export const uploadImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No image file provided" });
+        }
+        
+        const { url, fileId } = await uploadImageService(req.file);
+        res.status(200).json({ url, fileId });
+    } catch (error) {
+        console.error("Error uploading image:", error);
+        res.status(500).json({ error: "Failed to upload image" });
+    }
+};
+
+export const deleteImage = async (req, res) => {
+    try {
+        const { fileId } = req.body;
+        if (!fileId) {
+            return res.status(400).json({ error: "No fileId provided" });
+        }
+
+        await deleteImageService(fileId);
+        res.status(200).json({ message: "Image deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting image:", error);
+        res.status(500).json({ error: "Failed to delete image" });
     }
 };

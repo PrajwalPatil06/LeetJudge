@@ -40,3 +40,12 @@ export const cacheMiddleware = (durationInSeconds) => {
         }
     };
 };
+
+export const clearCache = async (key) => {
+    try {
+        await redisConnection.del(key);
+        logger.debug('Cache', `Cleared cache for ${key}`);
+    } catch (error) {
+        logger.error('Cache', 'Redis del error', error);
+    }
+};
