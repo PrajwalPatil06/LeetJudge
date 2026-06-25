@@ -6,6 +6,7 @@ import api from '../../lib/api';
 import CodeEditor from '../../components/CodeEditor';
 import { useAuth } from '../../contexts/AuthContext';
 import Link from 'next/link';
+import AiAnalysisSection from '../../components/AiAnalysisSection';
 
 const LANG_MAP = {
   54: { name: 'C++', monacoId: 'cpp' },
@@ -88,6 +89,10 @@ export default function SubmissionDetail() {
             )}
           </div>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '1.5rem' }}>
+        <AiAnalysisSection submissionId={id} />
       </div>
 
       {submission.verdict_message && (
