@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import MarkdownEditor from '../../components/MarkdownEditor';
 
 export default function CreateProblem() {
   const { user, loading: authLoading } = useAuth();
@@ -20,6 +21,31 @@ export default function CreateProblem() {
   const [testCases, setTestCases] = useState([{ input: '', output: '' }]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const DRAFT_KEY = 'leetjudge_create_problem_draft';
+
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.description) setDescription(parsed.description);
+        if (parsed.difficulty) setDifficulty(parsed.difficulty);
+        if (parsed.timelimit) setTimelimit(parsed.timelimit);
+        if (parsed.memorylimit) setMemorylimit(parsed.memorylimit);
+        if (parsed.tags) setTags(parsed.tags);
+        if (parsed.testCases) setTestCases(parsed.testCases);
+      } catch (e) {
+        console.error("Failed to load draft", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const draft = { title, description, difficulty, timelimit, memorylimit, tags, testCases };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }, [title, description, difficulty, timelimit, memorylimit, tags, testCases]);
 
   if (authLoading) {
     return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>;
@@ -73,6 +99,8 @@ export default function CreateProblem() {
         });
       }
 
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(`${DRAFT_KEY}_images`);
       router.push(`/problems/${problem.id}`);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create problem');
@@ -84,6 +112,28 @@ export default function CreateProblem() {
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Create Problem</h1>
+
+      <div style={{
+        backgroundColor: 'var(--bg-color)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 'var(--radius)',
+        padding: '1.5rem',
+        marginBottom: '2rem',
+        fontSize: '0.875rem',
+        color: 'var(--text-secondary)'
+      }}>
+        <h3 style={{ color: 'var(--text-main)', marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Guidelines for Problem Setters
+        </h3>
+        <ul style={{ margin: 0, paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <li><strong>Formatting:</strong> Use Markdown for structure (headings, lists, code blocks).</li>
+          <li><strong>Math/Formulas:</strong> Use <code>$...$</code> for inline LaTeX math (e.g., $O(n)$) and <code>$$...$$</code> for block LaTeX. <em>Note: standard LaTeX delimiters like <code>\\[ ... \\]</code> and <code>\\( ... \\)</code> are <strong>not</strong> supported by the markdown parser.</em></li>
+          <li><strong>Images:</strong> Use the "Upload Image" button. You can manage uploaded images in the "Session Uploads" gallery below the editor. Delete any mistakes to save server space!</li>
+          <li><strong>Examples:</strong> Clearly define at least 2 Example test cases within the Markdown description so users know what to expect.</li>
+          <li><strong>Constraints:</strong> Always provide clear constraints (e.g., $1 \\le nums.length \\le 10^5$) at the bottom of the description.</li>
+        </ul>
+      </div>
 
       {error && (
         <div style={{ color: 'var(--status-wrong)', marginBottom: '1rem', fontSize: '0.875rem', padding: '0.75rem', border: '1px solid var(--status-wrong)', borderRadius: 'var(--radius)', backgroundColor: '#fef2f2' }}>
@@ -98,25 +148,11 @@ export default function CreateProblem() {
           <label htmlFor="description" style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-main)' }}>
             Description (Markdown + LaTeX supported)
           </label>
-          <textarea
-            id="description"
-            required
+          <MarkdownEditor 
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={12}
-            placeholder="Write your problem statement here using Markdown. Use $...$ for inline LaTeX and $$...$$ for block LaTeX."
-            style={{
-              padding: '0.75rem',
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.875rem',
-              fontFamily: 'var(--font-code)',
-              resize: 'vertical',
-              outline: 'none',
-              backgroundColor: 'var(--surface)',
-              color: 'var(--text-main)',
-              lineHeight: '1.6',
-            }}
+            onChange={setDescription}
+            placeholder="Write your problem statement here using Markdown. Use $...$ for inline LaTeX and $$...$$ for block LaTeX. Use the Upload Image button to include images."
+            storageKey={DRAFT_KEY}
           />
         </div>
 
