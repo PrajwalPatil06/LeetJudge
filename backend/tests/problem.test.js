@@ -3,6 +3,7 @@ import app from '../app.js';
 import { pool } from '../config/database.js';
 import { hashPassword } from '../utils/password.util.js';
 import { generateToken } from '../utils/jwt.util.js';
+import { getAllTags } from '../models/tag.js';
 
 describe('Problem Endpoints', () => {
     let adminToken = '';
@@ -76,7 +77,7 @@ describe('Problem Endpoints', () => {
     it('should return allowed problem tags', async () => {
         const res = await request(app).get('/api/problems/tags');
         expect(res.statusCode).toEqual(200);
-        expect(res.body.tags).toEqual(['Arrays', 'Trees', 'Graphs', 'Dynamic Programming']);
+        expect(res.body.tags).toEqual(getAllTags());
     });
 
     it('should add test cases to the created problem', async () => {
