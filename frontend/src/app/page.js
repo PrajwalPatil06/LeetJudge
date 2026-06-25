@@ -1,27 +1,40 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import api from './lib/api';
 import Table from './components/Table';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from './contexts/AuthContext';
 import Link from 'next/link';
-import Badge from './components/Badge';
 import DifficultyBadge from './components/DifficultyBadge';
 import ProblemTagFilter from './components/ProblemTagFilter';
+import ClickableProblemTag from './components/ClickableProblemTag';
 
-export default function Home() {
+function HomeContent() {
   const [problems, setProblems] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
+
+  useEffect(() => {
+    const tagParam = searchParams.get('tag');
+    const tagsParam = searchParams.get('tags');
+    let next = [];
+    if (tagsParam) {
+      next = tagsParam.split(',').map(decodeURIComponent).filter(Boolean);
+    } else if (tagParam) {
+      next = [decodeURIComponent(tagParam)];
+    }
+    setSelectedFilters(next);
+    sessionStorage.setItem('leetjudge_tag_filters', JSON.stringify(next));
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchProblems = async () => {
       try {
         const res = await api.get('/problems');
-        // Backend returns { problems: [...] }
         const data = res.data.problems || res.data;
         setProblems(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -32,6 +45,30 @@ export default function Home() {
     };
     fetchProblems();
   }, []);
+
+  const syncFiltersToUrl = (tags) => {
+    sessionStorage.setItem('leetjudge_tag_filters', JSON.stringify(tags));
+    if (tags.length === 0) {
+      router.replace('/');
+    } else if (tags.length === 1) {
+      router.replace(`/?tag=${encodeURIComponent(tags[0])}`);
+    } else {
+      router.replace(`/?tags=${tags.map(encodeURIComponent).join(',')}`);
+    }
+  };
+
+  const toggleTagFilter = (tag) => {
+    const next = selectedFilters.includes(tag)
+      ? selectedFilters.filter((t) => t !== tag)
+      : [...selectedFilters, tag];
+    setSelectedFilters(next);
+    syncFiltersToUrl(next);
+  };
+
+  const handleFilterChange = (tags) => {
+    setSelectedFilters(tags);
+    syncFiltersToUrl(tags);
+  };
 
   const columns = [
     { header: '#', accessor: 'id', render: (row) => (
@@ -49,7 +86,12 @@ export default function Home() {
     { header: 'Tags', accessor: 'tags', render: (row) => (
       <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
         {row.tags && row.tags.length > 0 ? row.tags.map(tag => (
-          <Badge key={tag}>{tag}</Badge>
+          <ClickableProblemTag
+            key={tag}
+            tag={tag}
+            isActive={selectedFilters.includes(tag)}
+            onFilter={toggleTagFilter}
+          />
         )) : <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>None</span>}
       </div>
     )},
@@ -72,7 +114,7 @@ export default function Home() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 style={{ fontSize: '1.5rem', marginBottom: '0' }}>Problem Set</h1>
-          <ProblemTagFilter selectedTags={selectedFilters} onChange={setSelectedFilters} />
+          <ProblemTagFilter selectedTags={selectedFilters} onChange={handleFilterChange} />
         </div>
         {user && (user.role === 'ADMIN' || user.role === 'PROBLEM_SETTER') && (
           <Link href="/problems/create" style={{
@@ -96,7 +138,7 @@ export default function Home() {
           No problems match the selected filters.
           <button
             type="button"
-            onClick={() => setSelectedFilters([])}
+            onClick={() => handleFilterChange([])}
             style={{
               display: 'block',
               margin: '0.75rem auto 0',
@@ -119,5 +161,13 @@ export default function Home() {
         />
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading problems...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

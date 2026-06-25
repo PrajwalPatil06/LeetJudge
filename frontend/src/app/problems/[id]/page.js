@@ -7,8 +7,8 @@ import api from '../../lib/api';
 import MarkdownRenderer from '../../components/MarkdownRenderer';
 import CodeEditor from '../../components/CodeEditor';
 import Button from '../../components/Button';
-import Badge from '../../components/Badge';
 import DifficultyBadge from '../../components/DifficultyBadge';
+import ClickableProblemTag from '../../components/ClickableProblemTag';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -174,7 +174,7 @@ export default function ProblemWorkspace() {
           {problem.tags && problem.tags.length > 0 && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
               {problem.tags.map(tag => (
-                <Badge key={tag} bg="var(--badge-bg)" border="var(--border-color)" color="var(--text-secondary)">{tag}</Badge>
+                <ClickableProblemTag key={tag} tag={tag} />
               ))}
             </div>
           )}
