@@ -1,5 +1,5 @@
 import { BaseAnalyzerStrategy } from './base.strategy.js';
-import logger from '../../utils/logger.js';
+import logger from '../../../utils/logger.js';
 
 export class GeminiAnalyzerStrategy extends BaseAnalyzerStrategy {
     async analyze(code, problem, verdict) {
