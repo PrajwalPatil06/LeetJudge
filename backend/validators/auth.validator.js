@@ -35,3 +35,13 @@ export const validateLogin = (req, res, next) => {
 
     next();
 };
+
+export const validateGoogleLogin = (req, res, next) => {
+    const { credential } = req.body;
+
+    if (!credential) {
+        return res.status(400).json({ error: 'Google credential is required' });
+    }
+
+    next();
+};

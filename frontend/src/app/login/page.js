@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 import Link from 'next/link';
 
 export default function Login() {
@@ -34,6 +35,12 @@ export default function Login() {
           <Input label="Password" id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '1rem' }}>Sign In</Button>
         </form>
+        <div style={{ display: 'flex', alignItems: 'center', margin: '1.25rem 0', gap: '0.75rem' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }} />
+        </div>
+        <GoogleLoginButton />
         <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
           Don't have an account? <Link href="/signup" style={{ color: 'var(--primary)', fontWeight: '500' }}>Sign up</Link>
         </div>

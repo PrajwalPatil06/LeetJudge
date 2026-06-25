@@ -6,6 +6,7 @@ import { generateToken } from '../utils/jwt.util.js';
 import { sendWelcomeEmail, sendLoginAlertEmail } from './email.service.js';
 
 import { getLocationFromIP } from '../utils/geo.util.js';
+import { verifyGoogleToken } from '../utils/google.util.js';
 
 export const signupService = async ({ name, username, email, password }) => {
     // Check if email is already taken
@@ -48,6 +49,10 @@ export const loginService = async (email, password, ip, userAgent) => {
         throw new Error('Invalid email or password');
     }
 
+    if (!user.password_hash) {
+        throw new Error('Invalid email or password');
+    }
+
     const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) {
         throw new Error('Invalid email or password');
@@ -87,4 +92,65 @@ export const getMeService = async (userId) => {
         delete user.password_hash;
     }
     return user;
+};
+
+const generateUniqueUsername = async (email) => {
+    const base = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) || 'user';
+    let username = base;
+    let counter = 1;
+    while (await accountRepo.findByUsername(username)) {
+        username = `${base}${counter}`;
+        counter++;
+    }
+    return username;
+};
+
+const sendLoginAlert = (user, ip, userAgent) => {
+    const time = new Date().toLocaleString();
+    getLocationFromIP(ip).then(loc => {
+        let cleanIp = ip || 'Unknown';
+        if (cleanIp.startsWith('::ffff:')) {
+            cleanIp = cleanIp.substring(7);
+        }
+        const isUnknown = loc === 'Unknown Region' || loc === 'Local Network (Development)';
+        const locationDisplay = isUnknown ? null : loc;
+        sendLoginAlertEmail(user.email, cleanIp, locationDisplay, userAgent, time).catch(err => {
+            console.error('Failed to send login alert email:', err.message);
+        });
+    });
+};
+
+export const googleLoginService = async (credential, ip, userAgent) => {
+    const payload = await verifyGoogleToken(credential);
+    const { sub: googleId, email, name, email_verified: emailVerified } = payload;
+
+    if (!email || !emailVerified) {
+        throw new Error('Google account email is not verified');
+    }
+
+    let user = await accountRepo.findByGoogleId(googleId);
+
+    if (!user) {
+        const existingEmail = await accountRepo.findByEmail(email);
+        if (existingEmail) {
+            user = await accountRepo.linkGoogleId(existingEmail.id, googleId);
+        } else {
+            const username = await generateUniqueUsername(email);
+            user = await accountRepo.create({
+                name: name || email.split('@')[0],
+                username,
+                email,
+                googleId,
+                role: 'USER',
+            });
+            sendWelcomeEmail(user.email, user.name).catch(err => {
+                console.error('Failed to send welcome email:', err.message);
+            });
+        }
+    }
+
+    const token = generateToken({ id: user.id, role: user.role });
+    delete user.password_hash;
+    sendLoginAlert(user, ip, userAgent);
+    return { user, token };
 };
