@@ -45,6 +45,9 @@ export const compile = async (sandboxDir, langConfig) => {
                 '-v', `leetjudge_sandbox_data:/sandbox`,
                 '-w', `/sandbox/${sandboxId}`,
                 '--network', 'none',
+                '--pids-limit', '64',
+                '--security-opt', 'no-new-privileges',
+                '--cap-drop', 'ALL',
                 langConfig.dockerImage,
                 'sh', '-c', langConfig.compileCmd
             ];
@@ -89,6 +92,9 @@ export const execute = async (sandboxDir, langConfig, input, timeLimitMs, memory
                 '--network', 'none',
                 '--memory', `${memoryLimitKb}k`,
                 '--cpus', '1.0',
+                '--pids-limit', '64',
+                '--security-opt', 'no-new-privileges',
+                '--cap-drop', 'ALL',
                 langConfig.dockerImage,
                 'sh', '-c', langConfig.runCmd
             ];
