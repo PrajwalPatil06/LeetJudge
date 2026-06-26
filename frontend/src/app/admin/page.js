@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import api from '../lib/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -10,6 +11,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 
 export default function AdminPanel() {
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('USER');

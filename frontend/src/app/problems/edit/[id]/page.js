@@ -27,6 +27,7 @@ export default function EditProblem({ params }) {
   const [tags, setTags] = useState([]);
   const [editorial, setEditorial] = useState('');
   const [isEditorialVisible, setIsEditorialVisible] = useState(true);
+  const [isHidden, setIsHidden] = useState(false);
   
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +48,7 @@ export default function EditProblem({ params }) {
         setTags(p.tags ? p.tags.filter((t) => allowedTags.includes(t)) : []);
         setEditorial(p.editorial || '');
         setIsEditorialVisible(p.is_editorial_visible !== false);
+        setIsHidden(p.is_hidden || false);
       } catch (err) {
         setError('Failed to fetch problem data');
       } finally {
@@ -84,6 +86,7 @@ export default function EditProblem({ params }) {
         tags,
         editorial,
         is_editorial_visible: isEditorialVisible,
+        is_hidden: isHidden,
       });
 
       router.push(`/problems/${id}`);
@@ -123,7 +126,22 @@ export default function EditProblem({ params }) {
       )}
 
       <form onSubmit={handleSubmit}>
-        <Input label="Title" id="title" type="text" required value={title} onChange={(e) => setTitle(e.target.value)} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <Input label="Title" id="title" type="text" required value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div style={{ paddingTop: '1.75rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius)', backgroundColor: 'var(--surface)' }}>
+              <input 
+                type="checkbox" 
+                checked={isHidden} 
+                onChange={(e) => setIsHidden(e.target.checked)} 
+                style={{ cursor: 'pointer' }}
+              />
+              Hide Problem (for upcoming contests)
+            </label>
+          </div>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
           <label htmlFor="description" style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-main)' }}>

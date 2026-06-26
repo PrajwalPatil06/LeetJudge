@@ -115,7 +115,21 @@ function HomeContent() {
       </span>
     )},
     { header: 'Title', accessor: 'title', render: (row) => (
-      <span style={{ fontWeight: '500' }}>{row.title}</span>
+      <span style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {row.title}
+        {row.is_hidden && (
+          <span style={{ 
+            fontSize: '0.7rem', 
+            padding: '0.15rem 0.4rem', 
+            backgroundColor: 'var(--status-wrong)', 
+            color: 'white', 
+            borderRadius: '4px',
+            fontWeight: '600'
+          }}>
+            Hidden
+          </span>
+        )}
+      </span>
     )},
     { header: 'Difficulty', accessor: 'difficulty', render: (row) => (
         <DifficultyBadge difficulty={row.difficulty} />

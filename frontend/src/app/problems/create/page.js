@@ -24,6 +24,7 @@ export default function CreateProblem() {
   const [tags, setTags] = useState([]);
   const [editorial, setEditorial] = useState('');
   const [isEditorialVisible, setIsEditorialVisible] = useState(true);
+  const [isHidden, setIsHidden] = useState(false);
   const [testCases, setTestCases] = useState([{ input: '', output: '' }]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +44,7 @@ export default function CreateProblem() {
         if (parsed.memorylimit) setMemorylimit(parsed.memorylimit);
         if (parsed.editorial !== undefined) setEditorial(parsed.editorial);
         if (parsed.isEditorialVisible !== undefined) setIsEditorialVisible(parsed.isEditorialVisible);
+        if (parsed.isHidden !== undefined) setIsHidden(parsed.isHidden);
         if (parsed.tags) {
           if (Array.isArray(parsed.tags)) {
             setTags(parsed.tags.filter((t) => allowedTags.includes(t)));
@@ -58,9 +60,9 @@ export default function CreateProblem() {
   }, [tagsLoading, allowedTags]);
 
   useEffect(() => {
-    const draft = { title, description, difficulty, timelimit, memorylimit, tags, testCases, editorial, isEditorialVisible };
+    const draft = { title, description, difficulty, timelimit, memorylimit, tags, testCases, editorial, isEditorialVisible, isHidden };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  }, [title, description, difficulty, timelimit, memorylimit, tags, testCases, editorial, isEditorialVisible]);
+  }, [title, description, difficulty, timelimit, memorylimit, tags, testCases, editorial, isEditorialVisible, isHidden]);
 
   if (authLoading) {
     return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>;
@@ -104,6 +106,7 @@ export default function CreateProblem() {
         tags,
         editorial,
         is_editorial_visible: isEditorialVisible,
+        is_hidden: isHidden,
       });
 
       const problem = problemRes.data.problem;
@@ -139,7 +142,22 @@ export default function CreateProblem() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <Input label="Title" id="title" type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Two Sum" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <Input label="Title" id="title" type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Two Sum" />
+          </div>
+          <div style={{ paddingTop: '1.75rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius)', backgroundColor: 'var(--surface)' }}>
+              <input 
+                type="checkbox" 
+                checked={isHidden} 
+                onChange={(e) => setIsHidden(e.target.checked)} 
+                style={{ cursor: 'pointer' }}
+              />
+              Hide Problem (for upcoming contests)
+            </label>
+          </div>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
           <label htmlFor="description" style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-main)' }}>
