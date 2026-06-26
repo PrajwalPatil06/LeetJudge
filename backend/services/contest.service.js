@@ -2,6 +2,15 @@ import * as contestdb from '../repositories/contest.repository.js';
 import { createSubmissionService } from './submission.service.js';
 
 export const createContestService = async (contestData) => {
+    if (!contestData.name || contestData.name.trim().length === 0) {
+        throw new Error('Contest name is required');
+    }
+
+    const validFormats = ['STANDARD', 'ICPC', 'IOI'];
+    if (!validFormats.includes(contestData.format)) {
+        throw new Error('Format must be one of: STANDARD, ICPC, IOI');
+    }
+
     if (
         new Date(contestData.start_time) >=
         new Date(contestData.end_time)
@@ -14,13 +23,19 @@ export const createContestService = async (contestData) => {
     return contestdb.create(contestData);
 };
 
-export const getAllContestsService = async (offset) => {
+export const getAllContestsService = async (offset, userId, userRole) => {
     const limit = 50;
 
-    return contestdb.findAll(
+    const contests = await contestdb.findAll(
         Number(offset) || 0,
         limit
     );
+
+    if (userRole === 'ADMIN') {
+        return contests;
+    }
+
+    return contests.filter(c => c.is_public || c.created_by === userId);
 };
 
 export const getContestByIdService = async (
@@ -133,10 +148,10 @@ export const registerForContestService = async (
     const now = new Date();
 
     if (
-        now > new Date(contest.end_time)
+        now >= new Date(contest.start_time)
     ) {
         throw new Error(
-            'Contest has already ended'
+            'Contest has already started'
         );
     }
 
@@ -193,12 +208,25 @@ async (
 
 export const getContestProblemsService =
 async (
-    contestId
+    contestId,
+    userId,
+    userRole
 ) => {
 
-    await getContestByIdService(
+    const contest = await getContestByIdService(
         contestId
     );
+
+    const now = new Date();
+    if (
+        now < new Date(contest.start_time) &&
+        contest.created_by !== userId &&
+        userRole !== 'ADMIN'
+    ) {
+        throw new Error(
+            'Forbidden: Cannot view problems before contest starts'
+        );
+    }
 
     return contestdb.getProblems(
         contestId

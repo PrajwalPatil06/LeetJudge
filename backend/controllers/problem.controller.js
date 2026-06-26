@@ -6,7 +6,7 @@ import { getAllTags } from '../models/tag.js';
 
 export const getProblems = async (req, res) => {
     try {
-        const problems = await problemService.getAllProblems();
+        const problems = await problemService.getAllProblems(req.user?.id, req.user?.role);
         res.status(200).json({ problems });
     } catch (error) {
         console.error(error);
@@ -20,7 +20,7 @@ export const getTags = async (req, res) => {
 
 export const createProblem = async (req, res) => {
     try {
-        const { title, description, tags, difficulty, timelimit, memorylimit, editorial, is_editorial_visible } = req.body;
+        const { title, description, tags, difficulty, timelimit, memorylimit, editorial, is_editorial_visible, is_hidden } = req.body;
         const createdBy = req.user.id;
 
         if (!title || !description || !difficulty || !timelimit || !memorylimit) {
@@ -43,7 +43,7 @@ export const createProblem = async (req, res) => {
         }
 
         const newProblem = await problemService.createProblemService({
-            title, description, tags, difficulty, createdBy, timelimit, memorylimit, editorial, isEditorialVisible: is_editorial_visible
+            title, description, tags, difficulty, createdBy, timelimit, memorylimit, editorial, isEditorialVisible: is_editorial_visible, isHidden: is_hidden
         });
 
         // Invalidate cache
@@ -112,7 +112,7 @@ export const updateProblem = async (req, res) => {
             return res.status(403).json({ error: "Forbidden: You don't have permission to edit this problem" });
         }
 
-        const { title, description, tags, difficulty, timelimit, memorylimit, editorial, is_editorial_visible } = req.body;
+        const { title, description, tags, difficulty, timelimit, memorylimit, editorial, is_editorial_visible, is_hidden } = req.body;
         
         // Basic validation
         if (!title || !description || !difficulty || !timelimit || !memorylimit) {
@@ -120,7 +120,7 @@ export const updateProblem = async (req, res) => {
         }
 
         const updatedProblem = await problemService.updateProblemService(problemId, {
-            title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible: is_editorial_visible
+            title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible: is_editorial_visible, isHidden: is_hidden
         });
 
         // Invalidate cache

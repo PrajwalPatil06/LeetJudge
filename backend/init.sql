@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS problems (
     description TEXT NOT NULL,
     editorial TEXT,
     is_editorial_visible BOOLEAN DEFAULT true,
+    is_hidden BOOLEAN DEFAULT false,
     tags TEXT[] DEFAULT '{}',
     difficulty difficulty_enum NOT NULL,
     created_by UUID REFERENCES accounts(id) ON DELETE SET NULL,

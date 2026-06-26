@@ -10,7 +10,8 @@ export const create = async ({
     timelimit,
     memorylimit,
     editorial,
-    isEditorialVisible = true
+    isEditorialVisible = true,
+    isHidden = false
 }) => {
     const result = await query(
         `
@@ -24,9 +25,10 @@ export const create = async ({
             timelimit,
             memorylimit,
             editorial,
-            is_editorial_visible
+            is_editorial_visible,
+            is_hidden
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
         `,
         [
@@ -38,7 +40,8 @@ export const create = async ({
             timelimit,
             memorylimit,
             editorial,
-            isEditorialVisible
+            isEditorialVisible,
+            isHidden
         ]
     );
 
@@ -61,7 +64,32 @@ export const findById = async (problemId) => {
     return result.rows[0];
 };
 
-export const findAll = async (limit, offset) => {
+export const findAll = async (limit, offset, userId = null, userRole = 'USER') => {
+    // If user is Admin, they can see everything.
+    // If user is problem setter, they can see their own hidden problems.
+    // Otherwise, normal users can only see hidden problems if they are in an active or past contest.
+    
+    let visibilityCondition = `
+        p.is_hidden = false 
+        OR p.id IN (
+            SELECT cp.problem_id 
+            FROM contest_problems cp 
+            JOIN contests c ON cp.contest_id = c.id 
+            WHERE c.start_time <= NOW()
+        )
+    `;
+
+    if (userRole === 'ADMIN') {
+        visibilityCondition = `TRUE`;
+    } else if (userId) {
+        visibilityCondition = `(${visibilityCondition}) OR p.created_by = $3`;
+    }
+
+    const queryArgs = [limit, offset];
+    if (userRole !== 'ADMIN' && userId) {
+        queryArgs.push(userId);
+    }
+
     const result = await query(
         `
         SELECT
@@ -72,28 +100,34 @@ export const findAll = async (limit, offset) => {
             p.timelimit,
             p.memorylimit,
             p.is_editorial_visible,
+            (p.is_hidden AND NOT EXISTS (
+                SELECT 1 FROM contest_problems cp 
+                JOIN contests c ON cp.contest_id = c.id 
+                WHERE cp.problem_id = p.id AND c.start_time <= NOW()
+            )) as is_hidden,
             p.created_at,
             (SELECT COUNT(*) FROM submissions s WHERE s.problem_id = p.id) as total_submissions,
             (SELECT COUNT(*) FROM submissions s WHERE s.problem_id = p.id AND s.verdict = 'ACCEPTED') as accepted_submissions
         FROM problems p
+        WHERE ${visibilityCondition}
         ORDER BY p.created_at DESC
         LIMIT $1 OFFSET $2
         `,
-        [limit, offset]
+        queryArgs
     );
 
     return result.rows;
 };
 
-export const update = async (problemId, { title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible }) => {
+export const update = async (problemId, { title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, isHidden }) => {
     const result = await query(
         `
         UPDATE problems
-        SET title = $1, description = $2, tags = $3, difficulty = $4, timelimit = $5, memorylimit = $6, editorial = $7, is_editorial_visible = $8
-        WHERE id = $9
+        SET title = $1, description = $2, tags = $3, difficulty = $4, timelimit = $5, memorylimit = $6, editorial = $7, is_editorial_visible = $8, is_hidden = $9
+        WHERE id = $10
         RETURNING *
         `,
-        [title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, problemId]
+        [title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, isHidden, problemId]
     );
     return result.rows[0];
 };
