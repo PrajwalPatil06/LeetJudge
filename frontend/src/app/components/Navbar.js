@@ -11,6 +11,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Problems', path: '/' },
+    { name: 'Contests', path: '/contests' },
     { name: 'Submissions', path: '/submissions' },
   ];
 

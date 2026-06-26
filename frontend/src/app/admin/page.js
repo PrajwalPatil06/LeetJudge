@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import api from '../lib/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -9,6 +10,7 @@ import toast from 'react-hot-toast';
 
 export default function AdminPanel() {
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('USER');
@@ -51,6 +53,12 @@ export default function AdminPanel() {
   return (
     <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Admin Panel</h1>
+      
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <Button onClick={() => router.push('/admin/contests')} variant="primary">
+          Manage Contests
+        </Button>
+      </div>
       
       <div style={{
         backgroundColor: 'var(--surface)',
