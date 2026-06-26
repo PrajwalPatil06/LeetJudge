@@ -1,18 +1,11 @@
-import { R2StorageProvider } from './storage/R2StorageProvider.js';
+
 import { LocalStorageProvider } from './storage/LocalStorageProvider.js';
 import { GithubStorageProvider } from './storage/GithubStorageProvider.js';
 
 let storageProvider;
 
 // Factory to initialize the correct storage provider
-if (process.env.STORAGE_PROVIDER === 'r2') {
-    if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY || !process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL) {
-        console.warn("WARNING: R2 credentials not fully provided, falling back to LocalStorageProvider");
-        storageProvider = new LocalStorageProvider();
-    } else {
-        storageProvider = new R2StorageProvider();
-    }
-} else if (process.env.STORAGE_PROVIDER === 'github') {
+if (process.env.STORAGE_PROVIDER === 'github') {
     if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_REPO) {
         console.warn("WARNING: GitHub credentials not fully provided, falling back to LocalStorageProvider");
         storageProvider = new LocalStorageProvider();
