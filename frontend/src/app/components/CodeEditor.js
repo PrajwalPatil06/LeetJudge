@@ -1,17 +1,22 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 
 export default function CodeEditor({ language, value, onChange, readOnly = false, onSubmit }) {
   const editorRef = useRef(null);
+  const onSubmitRef = useRef(onSubmit);
+
+  useEffect(() => {
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
 
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
     
     if (onSubmit) {
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-        onSubmit();
+        if (onSubmitRef.current) onSubmitRef.current();
       });
     }
   };
