@@ -64,9 +64,28 @@ export const findById = async (problemId) => {
     return result.rows[0];
 };
 
-export const findAll = async (limit, offset) => {
-    const countResult = await query('SELECT COUNT(*) FROM problems');
+export const findAll = async (limit, offset, userId, userRole) => {
+    const isAdmin = userRole === 'ADMIN' || userRole === 'PROBLEM_SETTER';
+    
+    let visibilityCondition = 'p.is_hidden = false';
+    let countArgs = [];
+    let queryArgs = [limit, offset];
+    
+    if (isAdmin) {
+        visibilityCondition = '1=1';
+    } else if (userId) {
+        visibilityCondition = '(p.is_hidden = false OR p.created_by = $3)';
+        countArgs = [userId];
+    }
+
+    const countCondition = isAdmin ? '1=1' : (userId ? '(is_hidden = false OR created_by = $1)' : 'is_hidden = false');
+
+    const countResult = await query(`SELECT COUNT(*) FROM problems WHERE ${countCondition}`, countArgs);
     const total = parseInt(countResult.rows[0].count, 10);
+
+    if (userId && !isAdmin) {
+        queryArgs.push(userId);
+    }
 
     const result = await query(
         `
