@@ -23,10 +23,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
-        <div className="mobile-joke-overlay">
-          <h1>Who codes from a mobile phone? 📱😂</h1>
-          <p>Please use a desktop for the best LeetJudge experience.</p>
-        </div>
         <Providers>
           <Navbar />
           <main>{children}</main>

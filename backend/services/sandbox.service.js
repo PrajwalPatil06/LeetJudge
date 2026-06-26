@@ -1,5 +1,5 @@
 // compiling and running code
-import { execFile } from 'child_process';
+import { execFile, execSync } from 'child_process';
 import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
@@ -10,8 +10,16 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+let hasDocker = false;
+try {
+    execSync('which docker', { stdio: 'ignore' });
+    hasDocker = true;
+} catch (e) {
+    console.warn('Docker not found, falling back to local execution without sandbox isolation.');
+}
+
 // base sandbox folder
-const SANDBOX_BASE = join(__dirname, '..', '.sandbox_runs');
+const SANDBOX_BASE = process.env.SANDBOX_BASE || (hasDocker ? '/sandbox' : join(__dirname, '..', '.sandbox_runs'));
 
 // getting language by id
 const findLanguageById = (langId) => {
@@ -25,13 +33,31 @@ export const compile = async (sandboxDir, langConfig) => {
         return { success: true };
     }
 
-    const parts = langConfig.compileCmd.split(' ');
-    const cmd = parts[0];
-    const args = parts.slice(1);
+    const sandboxId = sandboxDir.split('/').pop();
 
     return new Promise((resolve) => {
+        let cmd, args, cwd;
+
+        if (hasDocker) {
+            cmd = 'docker';
+            args = [
+                'run', '--rm',
+                '-v', `leetjudge_sandbox_data:/sandbox`,
+                '-w', `/sandbox/${sandboxId}`,
+                '--network', 'none',
+                langConfig.dockerImage,
+                'sh', '-c', langConfig.compileCmd
+            ];
+            cwd = process.cwd(); // doesn't matter for docker
+        } else {
+            const parts = langConfig.compileCmd.split(' ');
+            cmd = parts[0];
+            args = parts.slice(1);
+            cwd = sandboxDir;
+        }
+
         execFile(cmd, args, {
-            cwd: sandboxDir,
+            cwd,
             timeout: 15000 // timeout 15s
         }, (error, stdout, stderr) => {
             if (error) {
@@ -48,16 +74,35 @@ export const compile = async (sandboxDir, langConfig) => {
 
 // running compiled code
 export const execute = async (sandboxDir, langConfig, input, timeLimitMs, memoryLimitKb) => {
-    const parts = langConfig.runCmd.split(' ');
-    const cmd = parts[0];
-    const args = parts.slice(1);
+    const sandboxId = sandboxDir.split('/').pop();
 
     return new Promise((resolve) => {
         const startTime = Date.now();
+        let cmd, args, cwd;
+
+        if (hasDocker) {
+            cmd = 'docker';
+            args = [
+                'run', '--rm', '-i',
+                '-v', `leetjudge_sandbox_data:/sandbox`,
+                '-w', `/sandbox/${sandboxId}`,
+                '--network', 'none',
+                '--memory', `${memoryLimitKb}k`,
+                '--cpus', '1.0',
+                langConfig.dockerImage,
+                'sh', '-c', langConfig.runCmd
+            ];
+            cwd = process.cwd();
+        } else {
+            const parts = langConfig.runCmd.split(' ');
+            cmd = parts[0];
+            args = parts.slice(1);
+            cwd = sandboxDir;
+        }
 
         const child = execFile(cmd, args, {
-            cwd: sandboxDir,
-            timeout: timeLimitMs + 500, // adding buffer
+            cwd,
+            timeout: timeLimitMs + (hasDocker ? 2000 : 500), // adding buffer for docker startup
             maxBuffer: memoryLimitKb * 1024
         }, (error, stdout, stderr) => {
             const executionTimeMs = Date.now() - startTime;

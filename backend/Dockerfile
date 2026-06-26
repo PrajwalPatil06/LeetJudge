@@ -1,22 +1,16 @@
-# Use an official Node.js runtime as a parent image
-FROM node:20-alpine
-
-# Set the working directory
+# Stage 1: Base image
+FROM node:20-alpine AS base
 WORKDIR /usr/src/app
-
-# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Install compilers and runtimes for the supported languages
-RUN apk add --no-cache python3 g++ openjdk11
-# Copy the rest of the backend source code
 COPY . .
 
-# Expose the application port
+# Stage 2: API Server (No heavy compilers needed)
+FROM base AS api
 EXPOSE 3000
-
-# Start the application
 CMD ["node", "app.js"]
+
+# Stage 3: Worker (Includes docker-cli to spawn sandboxed containers)
+FROM base AS worker
+RUN apk add --no-cache docker-cli
+CMD ["npm", "run", "worker"]

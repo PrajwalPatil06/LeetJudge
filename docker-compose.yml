@@ -30,12 +30,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: api
     container_name: leetjudge-backend
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+      - sandbox_data:/sandbox
     env_file:
       - ./backend/.env
     environment:
@@ -46,7 +48,6 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=supersecretjwtkey # Consider moving to .env
     depends_on:
       db:
         condition: service_healthy
@@ -59,11 +60,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: worker
     deploy:
       replicas: 3
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+      - sandbox_data:/sandbox
     env_file:
       - ./backend/.env
     environment:
@@ -74,7 +78,6 @@ services:
       - DB_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=supersecretjwtkey
     depends_on:
       db:
         condition: service_healthy
@@ -94,7 +97,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     env_file:
-      - ./backend/.env
+      - ./frontend/.env
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3000/api
     depends_on:
@@ -104,3 +107,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  sandbox_data:
+    name: leetjudge_sandbox_data
+

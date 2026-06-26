@@ -115,39 +115,3 @@ input, textarea, select {
   background: transparent;
 }
 
-/* Mobile Joke Overlay */
-.mobile-joke-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: var(--bg-color);
-  z-index: 9999;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 2rem;
-  flex-direction: column;
-}
-
-.mobile-joke-overlay h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.mobile-joke-overlay p {
-  font-size: 1.2rem;
-  color: var(--text-secondary);
-}
-
-@media (max-width: 768px) {
-  .mobile-joke-overlay {
-    display: flex;
-  }
-  
-  body > :not(.mobile-joke-overlay) {
-    display: none !important;
-  }
-}
