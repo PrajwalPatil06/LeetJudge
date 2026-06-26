@@ -64,29 +64,26 @@ export const findById = async (problemId) => {
     return result.rows[0];
 };
 
-export const findAll = async (limit, offset, userId = null, userRole = 'USER') => {
-    // If user is Admin, they can see everything.
-    // If user is problem setter, they can see their own hidden problems.
-    // Otherwise, normal users can only see hidden problems if they are in an active or past contest.
+export const findAll = async (limit, offset, userId, userRole) => {
+    const isAdmin = userRole === 'ADMIN' || userRole === 'PROBLEM_SETTER';
     
-    let visibilityCondition = `
-        p.is_hidden = false 
-        OR p.id IN (
-            SELECT cp.problem_id 
-            FROM contest_problems cp 
-            JOIN contests c ON cp.contest_id = c.id 
-            WHERE c.start_time <= NOW()
-        )
-    `;
-
-    if (userRole === 'ADMIN') {
-        visibilityCondition = `TRUE`;
+    let visibilityCondition = 'p.is_hidden = false';
+    let countArgs = [];
+    let queryArgs = [limit, offset];
+    
+    if (isAdmin) {
+        visibilityCondition = '1=1';
     } else if (userId) {
-        visibilityCondition = `(${visibilityCondition}) OR p.created_by = $3`;
+        visibilityCondition = '(p.is_hidden = false OR p.created_by = $3)';
+        countArgs = [userId];
     }
 
-    const queryArgs = [limit, offset];
-    if (userRole !== 'ADMIN' && userId) {
+    const countCondition = isAdmin ? '1=1' : (userId ? '(is_hidden = false OR created_by = $1)' : 'is_hidden = false');
+
+    const countResult = await query(`SELECT COUNT(*) FROM problems WHERE ${countCondition}`, countArgs);
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    if (userId && !isAdmin) {
         queryArgs.push(userId);
     }
 
@@ -116,7 +113,7 @@ export const findAll = async (limit, offset, userId = null, userRole = 'USER') =
         queryArgs
     );
 
-    return result.rows;
+    return { problems: result.rows, total };
 };
 
 export const update = async (problemId, { title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, isHidden }) => {

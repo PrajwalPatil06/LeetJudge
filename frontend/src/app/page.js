@@ -13,7 +13,12 @@ import ClickableProblemTag from './components/ClickableProblemTag';
 function HomeContent() {
   const [problems, setProblems] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState([]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState('');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 20;
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -21,6 +26,8 @@ function HomeContent() {
   useEffect(() => {
     const tagParam = searchParams.get('tag');
     const tagsParam = searchParams.get('tags');
+    const diffParam = searchParams.get('difficulty');
+    const pageParam = parseInt(searchParams.get('page')) || 1;
     let next = [];
     if (tagsParam) {
       next = tagsParam.split(',').map(decodeURIComponent).filter(Boolean);
@@ -28,15 +35,24 @@ function HomeContent() {
       next = [decodeURIComponent(tagParam)];
     }
     setSelectedFilters(next);
+    setSelectedDifficulty(diffParam || '');
+    setPage(pageParam);
     sessionStorage.setItem('leetjudge_tag_filters', JSON.stringify(next));
+    sessionStorage.setItem('leetjudge_difficulty_filter', diffParam || '');
   }, [searchParams]);
 
   useEffect(() => {
     const fetchProblems = async () => {
+      setLoading(true);
       try {
-        const res = await api.get('/problems');
+        const offset = (page - 1) * limit;
+        const res = await api.get(`/problems?limit=${limit}&offset=${offset}`);
         const data = res.data.problems || res.data;
         setProblems(Array.isArray(data) ? data : []);
+        setHasMore(res.data.hasMore || false);
+        if (res.data.total) {
+          setTotalPages(Math.max(1, Math.ceil(res.data.total / limit)));
+        }
       } catch (err) {
         console.error("Failed to load problems", err);
       } finally {
@@ -44,17 +60,33 @@ function HomeContent() {
       }
     };
     fetchProblems();
-  }, []);
+  }, [page]);
 
-  const syncFiltersToUrl = (tags) => {
+  const syncFiltersToUrl = (tags, difficulty, newPage = page) => {
     sessionStorage.setItem('leetjudge_tag_filters', JSON.stringify(tags));
+    sessionStorage.setItem('leetjudge_difficulty_filter', difficulty);
+    const params = new URLSearchParams(searchParams);
     if (tags.length === 0) {
-      router.replace('/');
+      params.delete('tag');
+      params.delete('tags');
     } else if (tags.length === 1) {
-      router.replace(`/?tag=${encodeURIComponent(tags[0])}`);
+      params.delete('tags');
+      params.set('tag', tags[0]);
     } else {
-      router.replace(`/?tags=${tags.map(encodeURIComponent).join(',')}`);
+      params.delete('tag');
+      params.set('tags', tags.join(','));
     }
+    if (difficulty) {
+      params.set('difficulty', difficulty);
+    } else {
+      params.delete('difficulty');
+    }
+    if (newPage > 1) {
+      params.set('page', newPage.toString());
+    } else {
+      params.delete('page');
+    }
+    router.replace(`/?${params.toString()}`);
   };
 
   const toggleTagFilter = (tag) => {
@@ -62,12 +94,18 @@ function HomeContent() {
       ? selectedFilters.filter((t) => t !== tag)
       : [...selectedFilters, tag];
     setSelectedFilters(next);
-    syncFiltersToUrl(next);
+    syncFiltersToUrl(next, selectedDifficulty);
   };
 
   const handleFilterChange = (tags) => {
     setSelectedFilters(tags);
-    syncFiltersToUrl(tags);
+    syncFiltersToUrl(tags, selectedDifficulty);
+  };
+
+  const handleDifficultyChange = (e) => {
+    const diff = e.target.value;
+    setSelectedDifficulty(diff);
+    syncFiltersToUrl(selectedFilters, diff);
   };
 
   const columns = [
@@ -113,11 +151,11 @@ function HomeContent() {
     { header: 'Memory Limit', accessor: 'memorylimit', render: (row) => `${Math.round(row.memorylimit / 1024)} MB` },
   ];
 
-  const filteredProblems = selectedFilters.length === 0
-    ? problems
-    : problems.filter((problem) =>
-        problem.tags?.some((tag) => selectedFilters.includes(tag))
-      );
+  const filteredProblems = problems.filter((problem) => {
+    const tagMatch = selectedFilters.length === 0 || problem.tags?.some((tag) => selectedFilters.includes(tag));
+    const difficultyMatch = !selectedDifficulty || problem.difficulty === selectedDifficulty;
+    return tagMatch && difficultyMatch;
+  });
 
   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading problems...</div>;
@@ -129,6 +167,27 @@ function HomeContent() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 style={{ fontSize: '1.5rem', marginBottom: '0' }}>Problem Set</h1>
           <ProblemTagFilter selectedTags={selectedFilters} onChange={handleFilterChange} />
+          <select 
+            value={selectedDifficulty} 
+            onChange={handleDifficultyChange}
+            style={{
+              padding: '0.5rem 0.875rem',
+              borderRadius: 'var(--radius)',
+              border: `1px solid ${selectedDifficulty ? 'var(--primary)' : 'var(--border-color)'}`,
+              backgroundColor: selectedDifficulty ? 'rgba(0, 122, 255, 0.05)' : 'var(--surface)',
+              color: selectedDifficulty ? 'var(--primary)' : 'var(--text-main)',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              outline: 'none',
+              appearance: 'none',
+            }}
+          >
+            <option value="">All Difficulties</option>
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
         </div>
         {user && (user.role === 'ADMIN' || user.role === 'PROBLEM_SETTER') && (
           <Link href="/problems/create" style={{
@@ -152,7 +211,10 @@ function HomeContent() {
           No problems match the selected filters.
           <button
             type="button"
-            onClick={() => handleFilterChange([])}
+            onClick={() => {
+              handleFilterChange([]);
+              handleDifficultyChange({ target: { value: '' } });
+            }}
             style={{
               display: 'block',
               margin: '0.75rem auto 0',
@@ -168,11 +230,52 @@ function HomeContent() {
           </button>
         </div>
       ) : (
-        <Table 
-          columns={columns} 
-          data={filteredProblems} 
-          onRowClick={(row) => router.push(`/problems/${row.id}`)} 
-        />
+        <>
+          <Table 
+            columns={columns} 
+            data={filteredProblems} 
+            onRowClick={(row) => router.push(`/problems/${row.id}`)} 
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
+            <button
+              onClick={() => {
+                const nextP = Math.max(1, page - 1);
+                setPage(nextP);
+                syncFiltersToUrl(selectedFilters, selectedDifficulty, nextP);
+              }}
+              disabled={page === 1}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--border-color)',
+                backgroundColor: page === 1 ? 'var(--bg-color)' : 'var(--surface)',
+                color: page === 1 ? 'var(--text-secondary)' : 'var(--text-main)',
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Previous
+            </button>
+            <span style={{ color: 'var(--text-secondary)' }}>Page {page} of {totalPages}</span>
+            <button
+              onClick={() => {
+                const nextP = page + 1;
+                setPage(nextP);
+                syncFiltersToUrl(selectedFilters, selectedDifficulty, nextP);
+              }}
+              disabled={!hasMore}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--border-color)',
+                backgroundColor: !hasMore ? 'var(--bg-color)' : 'var(--surface)',
+                color: !hasMore ? 'var(--text-secondary)' : 'var(--text-main)',
+                cursor: !hasMore ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

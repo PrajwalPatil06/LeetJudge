@@ -40,7 +40,7 @@ describe('Problem Endpoints', () => {
             .send({
                 title: 'Two Sum Test',
                 description: 'Given an array of integers and a target...',
-                tags: ['Arrays', 'Trees'],
+                tags: ['Array', 'Tree'],
                 difficulty: 'EASY',
                 timelimit: 1000,
                 memorylimit: 262144
@@ -58,7 +58,7 @@ describe('Problem Endpoints', () => {
             .send({
                 title: 'Invalid Tags Test',
                 description: 'Test problem',
-                tags: ['Hash Table'],
+                tags: ['Invalid Tag 123'],
                 difficulty: 'EASY',
                 timelimit: 1000,
                 memorylimit: 262144
