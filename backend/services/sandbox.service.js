@@ -88,11 +88,26 @@ export const execute = async (sandboxDir, langConfig, input, timeLimitMs, memory
             }
         });
 
+        // Handle EPIPE error if process dies immediately
+        child.stdin.on('error', (err) => {
+            if (err.code !== 'EPIPE') {
+                console.error('Sandbox stdin error:', err);
+            }
+        });
+
         // passing input
         if (input) {
-            child.stdin.write(input);
+            try {
+                child.stdin.write(input);
+            } catch (err) {
+                // Catch any synchronous write errors just in case
+            }
         }
-        child.stdin.end();
+        try {
+            child.stdin.end();
+        } catch (err) {
+            // Ignore end errors
+        }
     });
 };
 

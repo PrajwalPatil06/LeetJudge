@@ -20,3 +20,4 @@ coverage/
 # Sandbox temporary directories
 sandbox/tmp/
 .agents/
+backend/.sandbox_runs/

@@ -3,10 +3,7 @@
 import * as problemRepo from '../repositories/problem.repository.js';
 import * as testcaseRepo from '../repositories/testcase.js';
 
-export const getAllProblems = async () => {
-    // Default pagination values
-    const limit = 50;
-    const offset = 0;
+export const getAllProblems = async (limit = 50, offset = 0) => {
     return problemRepo.findAll(limit, offset);
 };
 

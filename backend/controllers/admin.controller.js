@@ -1,4 +1,5 @@
 import { updateRole as updateRoleRepo, findByEmail } from '../repositories/account.repository.js';
+import { getDashboardAnalytics } from '../repositories/admin.repository.js';
 import logger from '../utils/logger.js';
 
 export const updateRole = async (req, res) => {
@@ -36,5 +37,15 @@ export const updateRole = async (req, res) => {
     } catch (error) {
         logger.error('Admin', `Failed to update role: ${error.message}`);
         res.status(500).json({ error: 'An internal server error occurred' });
+    }
+};
+
+export const getAnalytics = async (req, res) => {
+    try {
+        const analytics = await getDashboardAnalytics();
+        res.status(200).json(analytics);
+    } catch (error) {
+        logger.error('Admin', `Failed to fetch analytics: ${error.message}`);
+        res.status(500).json({ error: 'Failed to fetch analytics data' });
     }
 };

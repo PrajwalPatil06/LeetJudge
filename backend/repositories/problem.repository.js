@@ -62,6 +62,9 @@ export const findById = async (problemId) => {
 };
 
 export const findAll = async (limit, offset) => {
+    const countResult = await query('SELECT COUNT(*) FROM problems');
+    const total = parseInt(countResult.rows[0].count, 10);
+
     const result = await query(
         `
         SELECT
@@ -82,7 +85,7 @@ export const findAll = async (limit, offset) => {
         [limit, offset]
     );
 
-    return result.rows;
+    return { problems: result.rows, total };
 };
 
 export const update = async (problemId, { title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible }) => {

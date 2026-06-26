@@ -6,8 +6,10 @@ import { getAllTags } from '../models/tag.js';
 
 export const getProblems = async (req, res) => {
     try {
-        const problems = await problemService.getAllProblems();
-        res.status(200).json({ problems });
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = parseInt(req.query.offset) || 0;
+        const { problems, total } = await problemService.getAllProblems(limit, offset);
+        res.status(200).json({ problems, total, hasMore: offset + problems.length < total });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "An internal server error occurred" });
