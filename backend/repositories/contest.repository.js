@@ -65,7 +65,7 @@ export const getParticipants = async (contestId) => {
 
 export const getProblems = async (contestId) => {
     const result = await query(
-        `SELECT cp.problem_order, cp.max_score, p.id, p.title, p.difficulty 
+        `SELECT cp.problem_id, cp.problem_order, cp.max_score, p.id, p.title, p.difficulty 
          FROM contest_problems cp
          JOIN problems p ON cp.problem_id = p.id
          WHERE cp.contest_id = $1 ORDER BY cp.problem_order ASC`,
@@ -103,8 +103,11 @@ export const updateProblems = async (contestId, problems) => {
 
 export const getSubmissions = async (contestId, userId) => {
     const result = await query(
-        `SELECT id, problem_id, lang, verdict, execution_time_ms, timestamp 
-         FROM submissions WHERE contest_id = $1 AND user_id = $2 ORDER BY timestamp DESC`,
+        `SELECT s.id, s.problem_id, s.lang, s.verdict, s.execution_time_ms, s.timestamp,
+                p.title as problem_title
+         FROM submissions s
+         JOIN problems p ON s.problem_id = p.id
+         WHERE s.contest_id = $1 AND s.user_id = $2 ORDER BY s.timestamp DESC`,
         [contestId, userId]
     );
     return result.rows;

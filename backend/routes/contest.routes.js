@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { authenticate, optionalAuthenticate, requireRole } from '../middleware/auth.middleware.js';
 
 import {
     createContest,
@@ -28,19 +28,19 @@ const router = express.Router();
  */
 
 // Create Contest
-router.post('/', authenticate, createContest);
+router.post('/', authenticate, requireRole(['ADMIN', 'PROBLEM_SETTER']), createContest);
 
 // Get All Contests
-router.get('/', getAllContests);
+router.get('/', optionalAuthenticate, getAllContests);
 
 // Get Contest Details
-router.get('/:contestId', getContestById);
+router.get('/:contestId', optionalAuthenticate, getContestById);
 
 // Update Contest
-router.patch('/:contestId', authenticate, updateContest);
+router.patch('/:contestId', authenticate, requireRole(['ADMIN', 'PROBLEM_SETTER']), updateContest);
 
 // Delete Contest
-router.delete('/:contestId', authenticate, deleteContest);
+router.delete('/:contestId', authenticate, requireRole(['ADMIN', 'PROBLEM_SETTER']), deleteContest);
 
 /**
  * Registration
@@ -73,6 +73,7 @@ router.get(
 // Get Problems In Contest
 router.get(
     '/:contestId/problems',
+    optionalAuthenticate,
     getContestProblems
 );
 
@@ -80,6 +81,7 @@ router.get(
 router.put(
     '/:contestId/problems',
     authenticate,
+    requireRole(['ADMIN', 'PROBLEM_SETTER']),
     editContestProblems
 );
 

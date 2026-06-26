@@ -10,7 +10,8 @@ export const create = async ({
     timelimit,
     memorylimit,
     editorial,
-    isEditorialVisible = true
+    isEditorialVisible = true,
+    isHidden = false
 }) => {
     const result = await query(
         `
@@ -24,9 +25,10 @@ export const create = async ({
             timelimit,
             memorylimit,
             editorial,
-            is_editorial_visible
+            is_editorial_visible,
+            is_hidden
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
         `,
         [
@@ -38,7 +40,8 @@ export const create = async ({
             timelimit,
             memorylimit,
             editorial,
-            isEditorialVisible
+            isEditorialVisible,
+            isHidden
         ]
     );
 
@@ -75,28 +78,34 @@ export const findAll = async (limit, offset) => {
             p.timelimit,
             p.memorylimit,
             p.is_editorial_visible,
+            (p.is_hidden AND NOT EXISTS (
+                SELECT 1 FROM contest_problems cp 
+                JOIN contests c ON cp.contest_id = c.id 
+                WHERE cp.problem_id = p.id AND c.start_time <= NOW()
+            )) as is_hidden,
             p.created_at,
             (SELECT COUNT(*) FROM submissions s WHERE s.problem_id = p.id) as total_submissions,
             (SELECT COUNT(*) FROM submissions s WHERE s.problem_id = p.id AND s.verdict = 'ACCEPTED') as accepted_submissions
         FROM problems p
+        WHERE ${visibilityCondition}
         ORDER BY p.created_at DESC
         LIMIT $1 OFFSET $2
         `,
-        [limit, offset]
+        queryArgs
     );
 
     return { problems: result.rows, total };
 };
 
-export const update = async (problemId, { title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible }) => {
+export const update = async (problemId, { title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, isHidden }) => {
     const result = await query(
         `
         UPDATE problems
-        SET title = $1, description = $2, tags = $3, difficulty = $4, timelimit = $5, memorylimit = $6, editorial = $7, is_editorial_visible = $8
-        WHERE id = $9
+        SET title = $1, description = $2, tags = $3, difficulty = $4, timelimit = $5, memorylimit = $6, editorial = $7, is_editorial_visible = $8, is_hidden = $9
+        WHERE id = $10
         RETURNING *
         `,
-        [title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, problemId]
+        [title, description, tags, difficulty, timelimit, memorylimit, editorial, isEditorialVisible, isHidden, problemId]
     );
     return result.rows[0];
 };

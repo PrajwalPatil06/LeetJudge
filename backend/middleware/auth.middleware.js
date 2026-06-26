@@ -19,6 +19,24 @@ export const authenticate = (req, res, next) => {
     }
 };
 
+export const optionalAuthenticate = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = verifyToken(token);
+        req.user = decoded; // attach user payload if valid
+    } catch (err) {
+        // ignore invalid token for optional auth
+    }
+    next();
+};
+
 // Middleware to check if user has a specific role (e.g. ADMIN, PROBLEM_SETTER)
 export const requireRole = (roles) => {
     return (req, res, next) => {

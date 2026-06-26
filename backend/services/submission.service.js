@@ -10,7 +10,7 @@ import { GroqAnalyzerStrategy } from './aiAnalyzer/strategies/groq.strategy.js';
 // Initialize AI Analyzer with Gemini Strategy (OCP)
 const aiAnalyzer = new AiAnalyzerContext(new GroqAnalyzerStrategy());
 
-export const createSubmissionService = async ({ userId, problemId, code, lang }) => {
+export const createSubmissionService = async ({ userId, problemId, contestId, code, lang }) => {
     // Validate problem exists before accepting submission
     const problem = await problemRepo.findById(problemId);
     if (!problem) {
@@ -20,6 +20,7 @@ export const createSubmissionService = async ({ userId, problemId, code, lang })
     const submission = await submissionRepo.create({
         userId,
         problemId,
+        contestId,
         code,
         language: lang
     });

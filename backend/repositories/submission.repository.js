@@ -4,6 +4,7 @@ import { query } from '../config/database.js';
 export const create = async ({
     userId,
     problemId,
+    contestId,
     code,
     language
 }) => {
@@ -13,15 +14,17 @@ export const create = async ({
         (
             user_id,
             problem_id,
+            contest_id,
             code,
             lang
         )
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *
         `,
         [
             userId,
             problemId,
+            contestId || null,
             code,
             language
         ]

@@ -42,7 +42,7 @@ app.use((req, res, next) => {
 app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
-app.use('/api/contest', contestRoutes);
+app.use('/api/contests', contestRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/admin', adminRoutes);

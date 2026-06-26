@@ -29,7 +29,7 @@ export const createContest = async (req, res) => {
 export const getAllContests = async (req, res) => {
     try {
         const offset = parseInt(req.query.offset) || 0;
-        const contests = await getAllContestsService(offset);
+        const contests = await getAllContestsService(offset, req.user?.id, req.user?.role);
         res.status(200).json(contests);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -99,10 +99,15 @@ export const getContestParticipants = async (req, res) => {
 
 export const getContestProblems = async (req, res) => {
     try {
-        const problems = await getContestProblemsService(req.params.contestId);
+        const problems = await getContestProblemsService(
+            req.params.contestId,
+            req.user?.id,
+            req.user?.role
+        );
         res.status(200).json(problems);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        const status = error.message.startsWith('Forbidden') ? 403 : 500;
+        res.status(status).json({ error: error.message });
     }
 };
 
