@@ -3,12 +3,15 @@ import logger from '../utils/logger.js';
 
 export const startKeepAlive = () => {
     // The public URL of the backend (e.g. on Render)
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL 
-        ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') 
-        : 'https://leetjudge-backend.onrender.com';
+    let backendUrl = process.env.RENDER_EXTERNAL_URL
+        || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : null)
+        || 'https://leetjudge-backend.onrender.com';
+        
+    // Remove trailing slash if present
+    backendUrl = backendUrl.replace(/\/$/, '');
 
-    // Ping every 14 minutes (840000 ms) to prevent Render free tier from sleeping (sleeps after 15 mins)
-    const PING_INTERVAL = 14 * 60 * 1000;
+    // Ping every 10 minutes (600000 ms) to prevent Render free tier from sleeping (sleeps after 15 mins)
+    const PING_INTERVAL = 10 * 60 * 1000;
 
     setInterval(async () => {
         try {
